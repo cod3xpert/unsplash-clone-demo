@@ -8,7 +8,7 @@ import ArrowBack from '@material-ui/icons/ArrowBack'
 import ArrowForward from '@material-ui/icons/ArrowForward'
 
 const baseUrl = "https://api.unsplash.com";
-const a = process.env.ACCESS_KEY;
+const a = process.env.NEXT_PUBLIC_ACCESS_KEY;
 
 export default () => {
   const [photos, setPhotos] = useState([]);
