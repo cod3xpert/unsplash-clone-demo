@@ -1,65 +1,120 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import React, { useEffect, useState } from "react";
+import Navbar from "../components/Navbar";
+import Axios from "axios";
+import StackGrid from "react-stack-grid";
+import Modal  from "@material-ui/core/Modal";
+import InfiniteScroll from "react-infinite-scroll-component";
+import ArrowBack from '@material-ui/icons/ArrowBack'
+import ArrowForward from '@material-ui/icons/ArrowForward'
 
-export default function Home() {
+const baseUrl = "https://api.unsplash.com";
+const a = process.env.ACCESS_KEY;
+
+export default () => {
+  const [photos, setPhotos] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [pg, setPg] = useState(1);
+  useEffect(() => {
+    getPhotos();
+  }, []);
+  const getPhotos = async () => {
+    const res = await Axios({
+      method: "GET",
+      url: `${baseUrl}/photos`,
+      params: { page: pg },
+      headers: {
+        Authorization: `Client-ID ${a}`
+      }
+    });
+    setPhotos([...photos, ...res.data]);
+    setPg(pg + 1);
+  };
   return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    <>
+      <Navbar />
+      <InfiniteScroll
+        scrollThreshold={0.94}
+        dataLength={photos.length} //This is important field to render the next data
+        next={getPhotos}
+        hasMore={true}
+        loader={<h4>Loading...</h4>}
+        endMessage={
+          <p style={{ textAlign: "center" }}>
+            <b>Yay! You have seen it all</b>
+          </p>
+        }
+      >
+        <StackGrid columnWidth={300}>
+          {photos.length > 0 &&
+            photos.map((item, i) => (
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
+              <div className="img" key={item.id}>
+                <img
+                  onClick={() => setSelected(item)}
+                  style={{ width: "100%", height: "auto" }}
+                  src={item.urls.thumb}
+                  alt={item.alt_description}
+                  />
+              </div>
+            ))}
+        </StackGrid>
+      </InfiniteScroll>
+      {selected && (
+        <>
+        <Modal
+          open={selected && true}
+          onClose={() => setSelected(false)}
+          className="center"
+        >     
+          <div
+            style={{
+              width: "80vw",
+              height: "70vh",
+              background: "white",
+              padding: 20,
+              maxWidth: "80vw"
+            }}
+            className="center"
           >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                background: `url(${selected.urls.regular}) center/contain no-repeat`
+              }}
+            />
+        <ArrowBack onClick={() => {
+          const indexNo = photos.findIndex(i => i.id === selected.id)
+          if(indexNo !== 0){
+            setSelected(photos[indexNo-1])
+          } else{
+            setSelected(photos[indexNo])
+          }
+        }} style={{
+          position: 'absolute',
+          top: '50%', left: 20,
+          transform: 'translate(-50%,-50%)',
+          cursor: 'pointer'
+        }} />
+          <ArrowForward onClick={() => {
+          const indexNo = photos.findIndex(i => i.id === selected.id)
+          if(indexNo !== photos.length-1){
+            setSelected(photos[indexNo+1])
+          } else{
+            setSelected(photos[indexNo])
+          }
+        }} style={{
+            position: 'absolute',
+            top: '50%', right: 10,
+            transform: 'translate(-50%,-50%)',
+            cursor: 'pointer'
+          }} />
+          </div>
+        </Modal>
 
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
 
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
-    </div>
-  )
-}
+          </>
+      )}
+    </>
+  );
+};
